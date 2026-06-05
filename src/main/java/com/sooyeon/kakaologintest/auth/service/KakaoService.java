@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import com.sooyeon.kakaologintest.auth.dto.KakaoUserResponse;
 
 @Service
 public class KakaoService {
@@ -37,5 +38,13 @@ public class KakaoService {
                 .body(body)
                 .retrieve()
                 .body(KakaoTokenResponse.class);
+    }
+
+    public KakaoUserResponse getKakaoUserInfo(String accessToken) {
+        return restClient.get()
+                .uri("https://kapi.kakao.com/v2/user/me")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(KakaoUserResponse.class);
     }
 }
