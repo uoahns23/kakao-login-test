@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import com.sooyeon.kakaologintest.auth.dto.KakaoUserResponse;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -35,13 +36,18 @@ public class KakaoController {
         return "redirect:" + kakaoLoginUrl;
     }
 
+
     @ResponseBody
     @GetMapping("/callback")
     public String kakaoCallback(String code) {
         KakaoTokenResponse tokenResponse = kakaoService.getAccessToken(code);
 
-        return "access token: " + tokenResponse.getAccessToken()
-                + "\nrefresh token: " + tokenResponse.getRefreshToken()
-                + "\nexpires in: " + tokenResponse.getExpiresIn();
+        KakaoUserResponse userResponse =
+                kakaoService.getKakaoUserInfo(tokenResponse.getAccessToken());
+
+        return "카카오 로그인 성공!"
+                + "\n카카오 ID: " + userResponse.getId()
+                + "\n닉네임: " + userResponse.getNickname()
+                + "\n프로필 이미지: " + userResponse.getProfileImageUrl();
     }
 }
