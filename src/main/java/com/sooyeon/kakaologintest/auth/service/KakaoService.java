@@ -1,6 +1,7 @@
 package com.sooyeon.kakaologintest.auth.service;
 
 import com.sooyeon.kakaologintest.auth.dto.KakaoTokenResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -8,8 +9,12 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import com.sooyeon.kakaologintest.auth.dto.KakaoUserResponse;
+import com.sooyeon.kakaologintest.user.domain.User;
+import com.sooyeon.kakaologintest.user.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class KakaoService {
 
     @Value("${kakao.client-id}")
@@ -22,6 +27,8 @@ public class KakaoService {
     private String clientSecret;
 
     private final RestClient restClient = RestClient.create();
+
+    private final UserRepository userRepository;
 
     public KakaoTokenResponse getAccessToken(String code) {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
@@ -47,4 +54,25 @@ public class KakaoService {
                 .retrieve()
                 .body(KakaoUserResponse.class);
     }
+
+    @Transactional
+    public User loginOrCreateUser(String code) {
+        KakaoTokenResponse tokenResponse = getAccessToken(code);
+
+        KakaoUserResponse kakaoUserResponse =
+                getKakaoUserInfo(tokenResponse.getAccessToken());
+
+        Long kakaoId = kakaoUserResponse.getId();
+        String nickname = kakaoUserResponse.getNickname();
+
+        return userRepository.findByKakaoId(kakaoId)
+                .map(user -> {
+                    user.updateNickname(nickname);
+                    return user;
+                })
+                .orElseGet(() -> userRepository.save(
+                        User.createKakaoUser(kakaoId, nickname)
+                ));
+    }
 }
+

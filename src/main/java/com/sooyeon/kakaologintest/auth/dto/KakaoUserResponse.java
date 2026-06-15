@@ -45,4 +45,6 @@ public class KakaoUserResponse {
 
         return kakaoAccount.getProfile().getProfileImageUrl();
     }
+
+
 }
