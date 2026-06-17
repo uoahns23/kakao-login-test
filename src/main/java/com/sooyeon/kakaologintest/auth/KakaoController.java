@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import com.sooyeon.kakaologintest.auth.dto.LoginUser;
+import jakarta.servlet.http.HttpSession;
+
 @Controller
 @RequiredArgsConstructor
 public class KakaoController {
@@ -40,12 +43,39 @@ public class KakaoController {
 
     @GetMapping("/callback")
     @ResponseBody
-    public String callback(@RequestParam String code) {
+    public String callback(@RequestParam String code, HttpSession session) {
         User user = kakaoService.loginOrCreateUser(code);
 
-        return "로그인 성공! DB 저장 완료<br>"
+        LoginUser loginUser = new LoginUser(
+                user.getId(),
+                user.getKakaoId(),
+                user.getNickname()
+        );
+
+        session.setAttribute("loginUser", loginUser);
+
+        return "로그인 성공! DB 저장 완료 + 세션 저장 완료<br>"
                 + "우리 서비스 user id: " + user.getId() + "<br>"
                 + "카카오 id: " + user.getKakaoId() + "<br>"
                 + "닉네임: " + user.getNickname();
+    }
+
+    @GetMapping("/me")
+    @ResponseBody
+    public Object me(HttpSession session) {
+        Object loginUser = session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            return "로그인하지 않은 사용자입니다.";
+        }
+
+        return loginUser;
+    }
+
+    @GetMapping("/logout")
+    @ResponseBody
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "로그아웃 완료";
     }
 }
